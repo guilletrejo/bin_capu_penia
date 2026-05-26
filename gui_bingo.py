@@ -296,7 +296,7 @@ class JuegoBingoGUI:
         ruta = filedialog.askopenfilename(initialdir="./rondas", title="Seleccionar Ronda", filetypes=[("Archivos CSV", "*.csv")])
         if not ruta: return
         try:
-            self.cartones.clear()
+            cartones_nuevos = {}
             count = 0
             with open(ruta, mode="r", encoding="utf-8") as f:
                 for fila in csv.reader(f):
@@ -309,10 +309,15 @@ class JuegoBingoGUI:
                         
                         # Reconstruimos las 3 filas (5 números por fila)
                         # Esto es vital para que la validación de Línea funcione perfecto
-                        self.cartones[id_c] = [nums[0:5], nums[5:10], nums[10:15]]
+                        cartones_nuevos[id_c] = [nums[0:5], nums[5:10], nums[10:15]]
                         count += 1
                     except ValueError: continue
-                    
+
+            if not cartones_nuevos:
+                messagebox.showerror("CSV inválido", "No se encontró ningún cartón válido. La ronda actual se mantiene sin cambios.")
+                return
+
+            self.cartones = cartones_nuevos
             self.lbl_status.config(text=f"{count} Cartones", fg=self.c_verde)
             self.btn_sacar.config(state="normal")
             nombre = os.path.splitext(os.path.basename(ruta))[0].replace("_", " ").upper()
