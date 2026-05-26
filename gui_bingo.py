@@ -17,6 +17,7 @@ class JuegoBingoGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Panel del Administrador - Control de Bingo")
+        self.root.protocol("WM_DELETE_WINDOW", self.confirmar_cierre_admin)
         #self.root.geometry("500x750")
         # Forzar centrado estricto en el monitor principal
         self.root.update_idletasks()
@@ -70,6 +71,17 @@ class JuegoBingoGUI:
                     self.logo_pil_base = None
 
         self.abrir_pantalla_publico()
+
+    def confirmar_cierre_admin(self):
+        confirmar = messagebox.askyesno(
+            "Cerrar juego",
+            "¿Seguro que querés cerrar el juego?\n\nSe perderá el estado actual de la ronda."
+        )
+        if confirmar:
+            self.root.destroy()
+
+    def bloquear_cierre_publico(self):
+        messagebox.showinfo("Pantalla pública", "La pantalla pública se controla desde el panel del administrador.")
 
     # ==========================================
     # INTERFAZ ADMINISTRADOR
@@ -131,6 +143,7 @@ class JuegoBingoGUI:
     def abrir_pantalla_publico(self):
         self.ventana_publico = tk.Toplevel(self.root)
         self.ventana_publico.title("BINGO - Pantalla Principal")
+        self.ventana_publico.protocol("WM_DELETE_WINDOW", self.bloquear_cierre_publico)
         #self.ventana_publico.geometry("1600x900") 
         # Forzar centrado estricto en el monitor principal
         self.ventana_publico.update_idletasks()
