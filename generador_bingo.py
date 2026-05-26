@@ -104,6 +104,7 @@ class GeneradorBingo:
             cols.append(col_nums)
             
         serie_actual = []
+        huellas_serie = set()
         for i in range(6):
             carton_nums = [[] for _ in range(9)]
             for c in range(9):
@@ -118,17 +119,18 @@ class GeneradorBingo:
             # Huella digital (Hashing) para garantizar Unicidad
             numeros_planos = sorted([num for fila in matriz_3x9 for num in fila if num != 0])
             huella = hashlib.md5(str(numeros_planos).encode()).hexdigest()
-            
+
             # Si el cartón ya existe (extremadamente raro), abortamos esta serie y generamos otra
-            if huella in self.cartones_unicos:
-                return None 
-                
-            self.cartones_unicos.add(huella)
-            
+            if huella in self.cartones_unicos or huella in huellas_serie:
+                return None
+
+            huellas_serie.add(huella)
+
             # Formato Aplanado
             lista_aplanada = [num for fila in matriz_3x9 for num in fila]
             serie_actual.append((start_id + i, lista_aplanada, matriz_3x9))
-            
+
+        self.cartones_unicos.update(huellas_serie)
         return serie_actual
 
     def exportar_csv(self, ruta, todos_los_cartones):
