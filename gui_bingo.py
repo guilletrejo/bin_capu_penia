@@ -46,7 +46,7 @@ class JuegoBingoGUI:
         self.bingo_cantado = False
         self.ruleta_girando = False
         self.angulo_actual_ruleta = 0.0
-        self.bola_en_espera = None
+        self.last_bola_sacada = None
         
         self.ganadores_teoricos_linea = []
         self.ganadores_teoricos_bingo = []
@@ -222,8 +222,8 @@ class JuegoBingoGUI:
         if not self.ventana_publico or not self.canvas_ruleta.winfo_exists(): return
         self.canvas_ruleta.delete("ruleta")
         lista_dibujo = list(self.bolas_disponibles)
-        if self.bola_en_espera and self.bola_en_espera not in lista_dibujo:
-            lista_dibujo.insert(self.indice_espera, self.bola_en_espera)
+        if self.last_bola_sacada and self.last_bola_sacada not in lista_dibujo:
+            lista_dibujo.insert(self.indice_last_bola_sacada, self.last_bola_sacada)
 
         n = len(lista_dibujo)
         if n == 0: return
@@ -318,7 +318,7 @@ class JuegoBingoGUI:
         self.btn_cerrar_bingo.config(state="normal", bg=self.c_sombra_oscura)
         
         self.angulo_actual_ruleta = 0.0
-        self.bola_en_espera = None
+        self.last_bola_sacada = None
         self.ganadores_teoricos_linea.clear()
         self.ganadores_teoricos_bingo.clear()
         self.lbl_admin_bola.config(text="--")
@@ -332,9 +332,7 @@ class JuegoBingoGUI:
         if not self.bolas_disponibles or self.ruleta_girando or self.bingo_cantado: return
         self.ruleta_girando = True
         self.btn_sacar.config(state="disabled", bg="#d4be9c")
-        if self.bola_en_espera:
-            if self.bola_en_espera in self.bolas_disponibles: self.bolas_disponibles.remove(self.bola_en_espera)
-            self.bola_en_espera = None
+        self.last_bola_sacada = None
         bola = random.choice(self.bolas_disponibles)
         idx = self.bolas_disponibles.index(bola)
         ap = 360 / len(self.bolas_disponibles)
@@ -353,9 +351,14 @@ class JuegoBingoGUI:
 
     def procesar_bola(self, bola, idx):
         self.ruleta_girando = False
-        self.btn_sacar.config(state="normal", bg=self.c_naranja)
         self.bolas_sacadas.append(bola)
-        self.bola_en_espera, self.indice_espera = bola, idx
+        if bola in self.bolas_disponibles:
+            self.bolas_disponibles.remove(bola)
+        self.last_bola_sacada, self.indice_last_bola_sacada = bola, idx
+        if self.bolas_disponibles:
+            self.btn_sacar.config(state="normal", bg=self.c_naranja)
+        else:
+            self.btn_sacar.config(state="disabled", bg="#d4be9c")
         self.lbl_admin_bola.config(text=f"{bola}")
         self.lbl_bola_publico.config(text=str(bola))
         self.dibujar_tablero_responsive()
