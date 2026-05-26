@@ -283,24 +283,78 @@ class JuegoBingoGUI:
         ruta = filedialog.askopenfilename(initialdir="./rondas", title="Seleccionar Ronda", filetypes=[("Archivos CSV", "*.csv")])
         if not ruta: return
         try:
-            self.cartones.clear()
-            count = 0
+            cartones_nuevos = {}
+            ids_vistos = set()
+            errores = []
+            total_errores = 0
+
+            def registrar_error(mensaje):
+                nonlocal total_errores
+                total_errores += 1
+                if len(errores) < 8:
+                    errores.append(mensaje)
+
             with open(ruta, mode="r", encoding="utf-8") as f:
-                for fila in csv.reader(f):
+                for numero_fila, fila in enumerate(csv.reader(f), start=1):
+                    fila = [celda.strip() for celda in fila]
+                    if not fila or all(celda == "" for celda in fila):
+                        continue
+
                     # Ahora esperamos 16 columnas: 1 ID + 15 números reales
-                    if not fila or len(fila) < 16: continue
+                    if len(fila) != 16:
+                        registrar_error(f"Fila {numero_fila}: se esperaban 16 columnas, pero hay {len(fila)}.")
+                        continue
+
                     try:
                         id_c = int(fila[0])
+                    except ValueError:
+                        registrar_error(f"Fila {numero_fila}: el ID del cartón no es un número entero.")
+                        continue
+
+                    if id_c <= 0:
+                        registrar_error(f"Fila {numero_fila}: el ID del cartón debe ser positivo.")
+                        continue
+
+                    if id_c in ids_vistos:
+                        registrar_error(f"Fila {numero_fila}: el cartón {id_c} está repetido.")
+                        continue
+
+                    try:
                         # Tomamos los 15 números
                         nums = [int(x) for x in fila[1:16]]
-                        
-                        # Reconstruimos las 3 filas (5 números por fila)
-                        # Esto es vital para que la validación de Línea funcione perfecto
-                        self.cartones[id_c] = [nums[0:5], nums[5:10], nums[10:15]]
-                        count += 1
-                    except ValueError: continue
-                    
-            self.lbl_status.config(text=f"{count} Cartones", fg=self.c_verde)
+                    except ValueError:
+                        registrar_error(f"Fila {numero_fila}: todos los números del cartón deben ser enteros.")
+                        continue
+
+                    fuera_de_rango = sorted({n for n in nums if n < 1 or n > 90})
+                    if fuera_de_rango:
+                        registrar_error(f"Fila {numero_fila}: hay números fuera de 1-90: {fuera_de_rango}.")
+                        continue
+
+                    repetidos = sorted({n for n in nums if nums.count(n) > 1})
+                    if repetidos:
+                        registrar_error(f"Fila {numero_fila}: hay números repetidos en el cartón: {repetidos}.")
+                        continue
+
+                    ids_vistos.add(id_c)
+
+                    # Reconstruimos las 3 filas (5 números por fila)
+                    # Esto es vital para que la validación de Línea funcione perfecto
+                    cartones_nuevos[id_c] = [nums[0:5], nums[5:10], nums[10:15]]
+
+            if total_errores:
+                detalle = "\n".join(errores)
+                if total_errores > len(errores):
+                    detalle += f"\n... y {total_errores - len(errores)} error/es más."
+                messagebox.showerror("CSV inválido", f"No se cargó la ronda. Corregí el archivo y volvé a intentar.\n\n{detalle}")
+                return
+
+            if not cartones_nuevos:
+                messagebox.showerror("CSV inválido", "No se encontró ningún cartón válido. La ronda actual se mantiene sin cambios.")
+                return
+
+            self.cartones = cartones_nuevos
+            self.lbl_status.config(text=f"{len(cartones_nuevos)} Cartones", fg=self.c_verde)
             self.btn_sacar.config(state="normal")
             nombre = os.path.splitext(os.path.basename(ruta))[0].replace("_", " ").upper()
             self.lbl_ronda_publico.config(text=f"JUGANDO: {nombre}")
