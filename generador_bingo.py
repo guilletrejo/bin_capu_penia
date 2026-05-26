@@ -15,12 +15,6 @@ except ImportError:
     PDF_AVAILABLE = False
     print("⚠️ ADVERTENCIA: ReportLab no está instalado. Solo se generará CSV.")
 
-# Paleta Aesthetic del Coro
-C_AZUL = colors.HexColor("#091433")
-C_VERDE = colors.HexColor("#394f3d")
-C_BEIGE = colors.HexColor("#ebd6b4")
-C_ROJO = colors.HexColor("#561118")
-
 class GeneradorBingo:
     def __init__(self):
         self.cartones_unicos = set()
@@ -146,6 +140,12 @@ class GeneradorBingo:
 
     def exportar_pdf(self, ruta, todos_los_cartones, nombre_ronda):
         if not PDF_AVAILABLE: return
+
+        # Paleta Aesthetic del Coro
+        C_AZUL = colors.HexColor("#091433")
+        C_VERDE = colors.HexColor("#394f3d")
+        C_BEIGE = colors.HexColor("#ebd6b4")
+        C_ROJO = colors.HexColor("#561118")
         
         c = canvas.Canvas(ruta, pagesize=A4)
         ancho_a4, alto_a4 = A4
